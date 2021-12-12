@@ -14,8 +14,21 @@ let package = Package(
         .library(name: "APIClient", targets: ["APIClient"])
     ],
 
+    dependencies: [
+        .package(url: "https://github.com/WeTransfer/Mocker.git", .upToNextMajor(from: "2.3.0"))
+    ],
+
     targets: [
-        .target(name: "APIClient", dependencies: []),
-        .testTarget(name: "APIClientTests", dependencies: ["APIClient"])
+        .target(
+            name: "APIClient",
+            dependencies: []
+        ),
+        .testTarget(
+            name: "APIClientTests",
+            dependencies: ["APIClient", "Mocker"],
+            resources: [
+                .process("Resources")
+            ]
+        )
     ]
 )

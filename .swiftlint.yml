@@ -23,15 +23,10 @@ identifier_name:
     error: 4
   max_length: 60
   excluded:
-    - all
-    - api
-    - day
+    - bio
+    - get
     - id
-    - job
-    - key
-    - lhs
-    - rhs
-    - tv
+    - put
     - url
 
 file_length:
