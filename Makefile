@@ -22,19 +22,19 @@ clean:
 
 # Build
 
-build-all: build-macos build-ios build-watchos build-linux
+build-all: build-ios build-watchos build-linux
 
 build:
 	@echo "Building for current platform..."
 	@swift build
 
-build-macos:
-	@echo "Building for macOS..."
-	@xcodebuild \
-		-scheme "$(SCHEME)" \
-		-sdk $(MAC_SDK) \
-		-destination $(MAC_DESTINATION) \
-		clean build
+#build-macos:
+#	@echo "Building for macOS..."
+#	@xcodebuild \
+#		-scheme "$(SCHEME)" \
+#		-sdk $(MAC_SDK) \
+#		-destination $(MAC_DESTINATION) \
+#		clean build
 
 build-ios:
 	@echo "Building for iOS..."
@@ -63,7 +63,7 @@ build-tvos:
 
 # Test
 
-test-all: test-macos test-ios test-watchos
+test-all: test-ios test-watchos test-tvos
 
 test:
 	@echo "Testing for current platform..."
