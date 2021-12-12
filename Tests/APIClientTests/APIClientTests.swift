@@ -133,3 +133,26 @@ final class APIClientTests: XCTestCase {
         XCTAssertEqual(user.login, "adamayoung")
     }
 }
+
+private func json(named name: String) -> Data {
+    let url = Bundle.module.url(forResource: name, withExtension: "json")
+    return (try? Data(contentsOf: url!)) ?? Data()
+}
+
+private final class MockAuthorizatingDelegate: APIClientDelegate {
+
+    var token = "expired-token"
+
+    func client(_ client: APIClient, willSendRequest request: inout URLRequest) {
+        request.allHTTPHeaderFields = ["Authorization": "Bearer: \(token)"]
+    }
+
+    func shouldClientRetry(_ client: APIClient, withError error: Error) async -> Bool {
+        if case .unacceptableStatusCode(let statusCode) = (error as? APIError), statusCode == 401 {
+            return true
+        }
+
+        return false
+    }
+
+}
