@@ -7,7 +7,7 @@ let package = Package(
     name: "APIClient",
 
     platforms: [
-        .macOS(.v12), .iOS(.v15), .tvOS(.v15), .watchOS(.v8)
+        .macOS(.v10_15), .iOS(.v15), .tvOS(.v15), .watchOS(.v8)
     ],
 
     products: [

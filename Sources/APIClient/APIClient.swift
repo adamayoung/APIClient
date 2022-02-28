@@ -3,7 +3,8 @@ import Foundation
 /// An API Client.
 public actor APIClient {
 
-    private let conf: Configuration
+    let conf: Configuration
+
     private let session: URLSession
     private let serializer: Serializer
     // swiftlint:disable weak_delegate
@@ -14,20 +15,35 @@ public actor APIClient {
     public struct Configuration {
 
         /// Host.
-        public var host: String
+        public let host: String
+        /// Base Path.
+        public let basePath: String?
         /// Port.
-        public var port: Int?
+        public let port: Int?
         /// If `true`, uses `http` instead of `https`.
-        public var isInsecure = false
+        public let isInsecure: Bool
         /// Sessing configuration. By default, uses `URLSessionConfiguration.default`.
-        public var sessionConfiguration: URLSessionConfiguration = .default
+        public let sessionConfiguration: URLSessionConfiguration
         /// By default, uses decoder with `.iso8601` date decoding strategy.
-        public var decoder: JSONDecoder?
+        public let decoder: JSONDecoder?
         /// By default, uses encoder with `.iso8601` date encoding strategy.
-        public var encoder: JSONEncoder?
+        public let encoder: JSONEncoder?
         // swiftlint:disable weak_delegate
-        public var clientDelegate: APIClientDelegate?
+        public let clientDelegate: APIClientDelegate?
         // swiftlint:enable weak_delegate
+
+        public init(host: String, basePath: String? = nil, port: Int? = nil, isInsecure: Bool = false,
+                    sessionConfiguration: URLSessionConfiguration = .default, decoder: JSONDecoder? = nil,
+                    encoder: JSONEncoder? = nil, clientDelegate: APIClientDelegate? = nil) {
+            self.host = host
+            self.basePath = basePath
+            self.port = port
+            self.isInsecure = isInsecure
+            self.sessionConfiguration = sessionConfiguration
+            self.decoder = decoder
+            self.encoder = encoder
+            self.clientDelegate = clientDelegate
+        }
     }
 
     /// Initializes the client with the given parameters.
@@ -38,8 +54,8 @@ public actor APIClient {
     ///    - delegate: A delegate to customize various aspects of the client.
     public convenience init(host: String, configuration: URLSessionConfiguration = .default,
                             delegate: APIClientDelegate? = nil) {
-        self.init(configuration: Configuration(host: host, sessionConfiguration: configuration,
-                                               clientDelegate: delegate))
+        let config = Configuration(host: host, sessionConfiguration: configuration, clientDelegate: delegate)
+        self.init(configuration: config)
     }
 
     /// Initializes the client with the given configuration.
@@ -98,7 +114,20 @@ extension APIClient {
     private func actuallySend(_ request: URLRequest) async throws -> Response<Data> {
         var request = request
         clientDelegate.client(self, willSendRequest: &request)
-        let (data, response) = try await session.data(for: request, delegate: nil)
+
+        let (data, response) =
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<(Data, URLResponse), Error>) in
+            session.dataTask(with: request) { data, response, error in
+                if let error = error {
+                    continuation.resume(throwing: error)
+                    return
+                }
+
+                continuation.resume(returning: (data!, response!))
+            }.resume()
+        }
+
+//        let (data, response) = try await session.data(for: request, delegate: nil)
         try validate(response: response, data: data)
         let httpResponse = (response as? HTTPURLResponse) ?? HTTPURLResponse()
         return Response(value: data, data: data, request: request, response: httpResponse,
@@ -110,7 +139,12 @@ extension APIClient {
         return try await makeRequest(url: url, method: request.method, body: request.body)
     }
 
-    private func makeURL(path: String, query: [String: String?]?) throws -> URL {
+    private func makeURL(path: String, query: [String: CustomStringConvertible?]?) throws -> URL {
+        var path = path
+        if let basePath = conf.basePath {
+            path = "\(basePath)\(path)"
+        }
+
         guard
             let url = URL(string: path),
             var components = URLComponents(url: url, resolvingAgainstBaseURL: false)
@@ -127,7 +161,13 @@ extension APIClient {
         }
 
         if let query = query {
-            components.queryItems = query.map(URLQueryItem.init)
+            components.queryItems = query.compactMap { key, value in
+                guard let value = value?.description else {
+                    return nil
+                }
+
+                return URLQueryItem(name: key, value: value)
+            }
         }
 
         guard let url = components.url else {

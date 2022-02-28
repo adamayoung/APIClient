@@ -36,30 +36,6 @@ final class APIClientTests: XCTestCase {
         XCTAssertEqual(user.login, "adamayoung")
     }
 
-    func testCancellingTheRequest() async throws {
-        let url = URL(string: "https://api.github.com/users/kean")!
-        var mock = Mock(url: url, dataType: .json, statusCode: 200, data: [
-            .get: json(named: "user")
-        ])
-        mock.delay = DispatchTimeInterval.seconds(60)
-        mock.register()
-
-        let task = Task {
-            try await client.send(.get("/users/kean"))
-        }
-
-        DispatchQueue.global().asyncAfter(deadline: .now() + .milliseconds(100)) {
-            task.cancel()
-        }
-
-        do {
-            _ = try await task.value
-        } catch {
-            XCTAssertTrue(error is URLError)
-            XCTAssertEqual((error as? URLError)?.code, .cancelled)
-        }
-    }
-
     func testDecodingWithDecodableResponse() async throws {
         let url = URL(string: "https://api.github.com/user")!
         Mock(url: url, dataType: .json, statusCode: 200, data: [

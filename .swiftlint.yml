@@ -26,6 +26,10 @@ identifier_name:
     - bio
     - get
     - id
+<<<<<<< HEAD
+    - key
+=======
+>>>>>>> main
     - put
     - url
 
