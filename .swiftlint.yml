@@ -26,6 +26,7 @@ identifier_name:
     - bio
     - get
     - id
+    - key
     - put
     - url
 
