@@ -4,6 +4,7 @@ import Foundation
 public actor APIClient {
 
     let conf: Configuration
+
     private let session: URLSession
     private let serializer: Serializer
     // swiftlint:disable weak_delegate
@@ -43,7 +44,6 @@ public actor APIClient {
             self.encoder = encoder
             self.clientDelegate = clientDelegate
         }
-
     }
 
     /// Initializes the client with the given parameters.
